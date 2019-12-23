@@ -1,9 +1,11 @@
 import React from "react";
 import { getMovies } from "../services/fakeMovieService";
 import Like from "./common/like";
+import Pagination from "./common/pagination";
+import { paginate } from "../utils/paginate";
 
 class Movies extends React.Component {
-   state = { movies: getMovies(), likes: [] };
+   state = { movies: getMovies(), likes: [], pageSize: 4, currentPage: 1 };
 
    handleDeleteMovie = movieId => {
       const updatedMovieList = this.state.movies.filter(
@@ -20,9 +22,29 @@ class Movies extends React.Component {
       this.setState({ movies });
    };
 
+   handlePageChange = page => {
+      this.setState({ currentPage: page });
+   }
+
    renderListOfMovies() {
-      if (this.state.movies.length > 0) {
-         return (
+      
+   }
+
+   render() {
+      const { movies: allMovies, currentPage, pageSize } = this.state;
+
+      const movies = paginate(allMovies, currentPage, pageSize);
+
+      return (
+         <div>
+            {movies.length > 0 && (
+               <h5>
+                  Showing {movies.length} movies in the database.
+               </h5>
+            )}
+            {movies.length === 0 && (
+               <h5>There are no movies in the database.</h5>
+            )}
             <table className="table">
                <thead>
                   <tr>
@@ -35,7 +57,7 @@ class Movies extends React.Component {
                   </tr>
                </thead>
                <tbody>
-                  {this.state.movies.map(movie => (
+                  {movies.map(movie => (
                      <tr key={movie._id}>
                         <td>{movie.title}</td>
                         <td>{movie.genre.name}</td>
@@ -61,22 +83,12 @@ class Movies extends React.Component {
                   ))}
                </tbody>
             </table>
-         );
-      }
-   }
-
-   render() {
-      return (
-         <div>
-            {this.state.movies.length > 0 && (
-               <h5>
-                  Showing {this.state.movies.length} movies in the database.
-               </h5>
-            )}
-            {this.state.movies.length === 0 && (
-               <h5>There are no movies in the database.</h5>
-            )}
-            {this.renderListOfMovies()}
+            <Pagination 
+               itemsCount={this.state.movies.length} 
+               pageSize={this.state.pageSize} 
+               onPageChange={this.handlePageChange} 
+               currentPage={this.state.currentPage}
+            />
          </div>
       );
    }
