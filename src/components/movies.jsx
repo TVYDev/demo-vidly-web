@@ -1,11 +1,29 @@
 import React from "react";
 import { getMovies } from "../services/fakeMovieService";
+import { getGenres } from "../services/fakeGenreService";
 import Like from "./common/like";
 import Pagination from "./common/pagination";
+import ListGroup from "./common/listGroup";
 import { paginate } from "../utils/paginate";
 
 class Movies extends React.Component {
-   state = { movies: getMovies(), likes: [], pageSize: 4, currentPage: 1 };
+   state = { 
+      movies: [], 
+      genres: [],
+      likes: [], 
+      pageSize: 4, 
+      currentPage: 1,
+      selectedGenre: null
+   };
+
+   componentDidMount() {
+      const genres = [{ name: 'All Genres'}, ...getGenres()];
+
+      this.setState({
+         movies: getMovies(),
+         genres
+      });
+   }
 
    handleDeleteMovie = movieId => {
       const updatedMovieList = this.state.movies.filter(
@@ -26,69 +44,79 @@ class Movies extends React.Component {
       this.setState({ currentPage: page });
    }
 
-   renderListOfMovies() {
-      
+   handleGenreSelect = genre => {
+      this.setState({ selectedGenre: genre, currentPage: 1 });
    }
 
    render() {
-      const { movies: allMovies, currentPage, pageSize } = this.state;
+      const { movies: allMovies, currentPage, pageSize, selectedGenre } = this.state;
 
-      const movies = paginate(allMovies, currentPage, pageSize);
+      const filtered = selectedGenre && selectedGenre._id ? allMovies.filter(m => m.genre._id === selectedGenre._id) : allMovies;
+      const movies = paginate(filtered, currentPage, pageSize);
 
       return (
-         <div>
-            {movies.length > 0 && (
-               <h5>
-                  Showing {movies.length} movies in the database.
-               </h5>
-            )}
-            {movies.length === 0 && (
-               <h5>There are no movies in the database.</h5>
-            )}
-            <table className="table">
-               <thead>
-                  <tr>
-                     <th scope="col">Title</th>
-                     <th scope="col">Genre</th>
-                     <th scope="col">Stock</th>
-                     <th scope="col">Rate</th>
-                     <th scope="col"></th>
-                     <th scope="col"></th>
-                  </tr>
-               </thead>
-               <tbody>
-                  {movies.map(movie => (
-                     <tr key={movie._id}>
-                        <td>{movie.title}</td>
-                        <td>{movie.genre.name}</td>
-                        <td>{movie.numberInStock}</td>
-                        <td>{movie.dailyRentalRate}</td>
-                        <td>
-                           <Like
-                              movieId={movie._id}
-                              liked={movie.liked}
-                              onLike={() => this.handleLike(movie)}
-                           />
-                        </td>
-                        <td>
-                           <button
-                              type="button"
-                              className="btn btn-danger"
-                              onClick={() => this.handleDeleteMovie(movie._id)}
-                           >
-                              Delete
-                           </button>
-                        </td>
+         <div className="row">
+            <div className="col-3">
+               <ListGroup 
+                  items={this.state.genres} 
+                  onItemSelect={this.handleGenreSelect}
+                  selectedItem={this.state.selectedGenre}
+               />
+            </div>
+            <div className="col">
+               {movies.length > 0 && (
+                  <h5>
+                     Showing {movies.length} movies in the database.
+                  </h5>
+               )}
+               {movies.length === 0 && (
+                  <h5>There are no movies in the database.</h5>
+               )}
+               <table className="table">
+                  <thead>
+                     <tr>
+                        <th scope="col">Title</th>
+                        <th scope="col">Genre</th>
+                        <th scope="col">Stock</th>
+                        <th scope="col">Rate</th>
+                        <th scope="col"></th>
+                        <th scope="col"></th>
                      </tr>
-                  ))}
-               </tbody>
-            </table>
-            <Pagination 
-               itemsCount={this.state.movies.length} 
-               pageSize={this.state.pageSize} 
-               onPageChange={this.handlePageChange} 
-               currentPage={this.state.currentPage}
-            />
+                  </thead>
+                  <tbody>
+                     {movies.map(movie => (
+                        <tr key={movie._id}>
+                           <td>{movie.title}</td>
+                           <td>{movie.genre.name}</td>
+                           <td>{movie.numberInStock}</td>
+                           <td>{movie.dailyRentalRate}</td>
+                           <td>
+                              <Like
+                                 movieId={movie._id}
+                                 liked={movie.liked}
+                                 onLike={() => this.handleLike(movie)}
+                              />
+                           </td>
+                           <td>
+                              <button
+                                 type="button"
+                                 className="btn btn-danger"
+                                 onClick={() => this.handleDeleteMovie(movie._id)}
+                              >
+                                 Delete
+                              </button>
+                           </td>
+                        </tr>
+                     ))}
+                  </tbody>
+               </table>
+               <Pagination 
+                  itemsCount={filtered.length} 
+                  pageSize={this.state.pageSize} 
+                  onPageChange={this.handlePageChange} 
+                  currentPage={this.state.currentPage}
+               />
+            </div> 
          </div>
       );
    }
